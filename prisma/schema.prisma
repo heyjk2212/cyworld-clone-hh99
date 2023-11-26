@@ -11,7 +11,7 @@ datasource db {
 }
 
 model Users {
-  userId Int @id @default(autoincrement()) @map("userId")
+  memberId Int @id @default(autoincrement()) @map("memberId")
   loginId String @map("loginId")
   password String @map("password")
   username String @map("username")
@@ -21,7 +21,7 @@ model Users {
   updatedAt DateTime @updatedAt @map("updatedAt")
 
   Profile Profile?
-  GuestBook GuestBook[]
+  GuestBook GuestBook[] // 사용자가 작성한 방명록
   Diaries Diaries[]
   Posts Posts[]
   Songs Songs[]
@@ -33,57 +33,58 @@ model Users {
 
 model Profile {
   profileId Int @id @default(autoincrement()) @map("profileId")
-  UserId Int  @unique @map("UserId")
-  mood String @map("mood")
-  message String @map("message") @db.Text
-  introduction String @map("introduction") @db.Text
-  profileImage String @map("image")
+  MemberId Int  @unique @map("MemberId")
+  mood String @default("즐거움") @map("mood")
+  message String @default("곧 크리스마스~~!!") @map("message") 
+  introduction String @default("안녕하세요") @map("introduction") 
+  profileImage String @default("https://hanghae99-assets.s3.ap-northeast-2.amazonaws.com/%EC%82%AC%EC%A7%84.jfif") @map("profileImage")
   
   createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
 
-  User Users @relation(fields: [UserId], references: [userId], onDelete: Cascade)
+  User Users @relation(fields: [MemberId], references: [memberId], onDelete: Cascade)
 
   @@map("Profile")
 }
 
 model GuestBook {
-  guestbookId Int @id @default(autoincrement()) @map("guestbookId")
-  UserId Int @map("UserId")
+  postId Int @id @default(autoincrement()) @map("postId")
+  MemberId Int @map("MemberId") // 방명록 소유주의 아이디
+  writerId Int @map("writerId")  // 글을 작성한 사용자의 아이디
   contents String @map("contents") @db.Text
 
   createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
 
-  User Users @relation(fields: [UserId], references: [userId], onDelete: Cascade)
+  User Users @relation(fields: [MemberId], references: [memberId], onDelete: Cascade)
 
   @@map("GuestBook")
 }
 
 model Diaries {
   diaryId Int @id @default(autoincrement()) @map("diaryId")
-  UserId Int @map("UserId")
+  MemberId Int @map("MemberId")
   contents String @map("contents") @db.Text
 
   createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
 
-  User Users @relation(fields: [UserId], references: [userId], onDelete: Cascade)
+  User Users @relation(fields: [MemberId], references: [memberId], onDelete: Cascade)
 
   @@map("Diary")
 }
 
 model Posts {
   postId Int @id @default(autoincrement()) @map("postId")
-  UserId Int @map("UserId")
+  MemberId Int @map("MemberId")
   title String @map("title")
-  likeCount Int @map("likeCount")
+  likeCount Int @default(0) @map("likeCount")
   contents String @map("contents") @db.Text
 
   createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
 
-  User Users @relation(fields: [UserId], references: [userId], onDelete: Cascade)
+  User Users @relation(fields: [MemberId], references: [memberId], onDelete: Cascade)
   Likes Likes[]
   Comments Comments[]
 
@@ -92,12 +93,12 @@ model Posts {
 
 model Songs {
   songId Int @id @default(autoincrement()) @map("songId")
-  UserId Int @map("UserId")
+  MemberId Int @map("MemberId")
   songUrl String @map("songUrl")
   
   createdAt DateTime @default(now()) @map("createdAt")
 
-  User Users @relation(fields: [UserId], references: [userId], onDelete: Cascade)
+  User Users @relation(fields: [MemberId], references: [memberId], onDelete: Cascade)
 
   @@map("Songs")
 }
@@ -105,24 +106,24 @@ model Songs {
 model Likes {
   likeId Int @id @default(autoincrement()) @map("likeId")
   PostId Int @map("PostId")
-  UserId Int @map("UserId")
+  MemberId Int @map("MemberId")
 
   Post Posts @relation(fields: [PostId], references: [postId], onDelete: Cascade)
-  User Users @relation(fields: [UserId], references: [userId], onDelete: Cascade)
+  User Users @relation(fields: [MemberId], references: [memberId], onDelete: Cascade)
 
   @@map("Likes")
 }
 
 model Comments {
   commentId Int @id @default(autoincrement()) @map("commentId")
-  UserId Int @map("UserId")
+  MemberId Int @map("MemberId")
   PostId Int @map("PostId")
   contents String @map("contents")
 
   createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
 
-  User Users @relation(fields: [UserId], references: [userId], onDelete: Cascade)
+  User Users @relation(fields: [MemberId], references: [memberId], onDelete: Cascade)
   Post Posts @relation(fields: [PostId], references: [postId], onDelete: Cascade)
 
   @@map("Comments")
