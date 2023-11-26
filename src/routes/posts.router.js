@@ -161,29 +161,36 @@ router.delete(
   },
 );
 
-// 댓글 좋아요 API
+// 게시글 좋아요 등록 API
 router.post(
-  "/users/:memberId/posts/:postId/like",
+  "/users/:memberId/posts/:postId/like/add",
   authMiddleware,
   async (req, res, next) => {
     try {
       const { memberId, postId } = req.params;
+      const userMemberId = req.user.memberId; // 로그인한 사용자의 아이디
 
-      const user = await prisma.users.findFirst({
+      // 좋아요 추가
+      const like = await prisma.likes.create({
         where: {
-          memberId: +memberId,
+          PostId: +postId,
+          MemberId: +userMemberId,
         },
       });
 
-      if (!user) {
-        return res
-          .status(404)
-          .json({ errorMessage: "유저가 존재하지 않습니다." });
-      }
+      // 해당 게시물에 좋아요 갯수 증가
+      await prisma.posts.update({
+        where: {
+          postId: +postId,
+        },
+        data: {
+          likeCount: {
+            increment: 1, // 좋아요 수를 1 증가
+          },
+        },
+      });
 
-      // 좋아요..
-
-      return res.status(200).json({ message: "좋아요를 했습니다" });
+      return res.status(201).json({ message: "좋아요를 했습니다" });
     } catch (error) {
       console.error(error);
 
@@ -191,4 +198,43 @@ router.post(
     }
   },
 );
+
+// 게시글 좋아요 삭제 API
+router.delete(
+  "/users/:memberId/posts/:postId/like/remove",
+  authMiddleware,
+  async (req, res, next) => {
+    try {
+      const { memberId, postId } = req.params;
+      const userMemberId = req.user.memberId; // 로그인한 사용자의 아이디
+
+      // 좋아요 삭제
+      const like = await prisma.likes.deleteMany({
+        where: {
+          PostId: +postId,
+          MemberId: +userMemberId,
+        },
+      });
+
+      // 해당 게시글의 좋아요 개수 감소
+      await prisma.posts.update({
+        where: {
+          postId: +postId,
+        },
+        data: {
+          likeCount: {
+            decrement: 1, // 좋아요 수를 1 감소
+          },
+        },
+      });
+
+      return res.status(200).json({ message: "좋아요를 취소했습니다" });
+    } catch (error) {
+      console.error(error);
+
+      return res.status(500).json({ error: "서버 에러" });
+    }
+  },
+);
+
 export default router;

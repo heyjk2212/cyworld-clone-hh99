@@ -108,6 +108,9 @@ model Likes {
   PostId Int @map("PostId")
   MemberId Int @map("MemberId")
 
+  createdAt DateTime @default(now()) @map("createdAt")
+  updatedAt DateTime @updatedAt @map("updatedAt")
+
   Post Posts @relation(fields: [PostId], references: [postId], onDelete: Cascade)
   User Users @relation(fields: [MemberId], references: [memberId], onDelete: Cascade)
 
