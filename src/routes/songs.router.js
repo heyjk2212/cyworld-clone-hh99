@@ -1,6 +1,7 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
 import authMiddleware from "../middlewares/auth.middleware.js";
+import { songsSchema } from "../validation/joi.js";
 
 const router = express.Router();
 
@@ -10,8 +11,12 @@ router.post(
   authMiddleware,
   async (req, res, next) => {
     try {
-      const { memberId } = req.params;
-      const { songUrl } = req.body;
+      // const { memberId } = req.params;
+      // const { songUrl } = req.body;
+      const validation = await songsSchema.validateAsync(req.body);
+      const validateParams = await songsSchema.validateAsync(req.params);
+      const { songUrl } = validation;
+      const { memberId } = validateParams;
       const user = req.user;
 
       // 프로필 주인이 로그인한 사용자와 일치하는지 확인
@@ -40,7 +45,9 @@ router.post(
 // 노래 조회
 router.get("/users/:memberId/songs", async (req, res, next) => {
   try {
-    const { memberId } = req.params;
+    // const { memberId } = req.params;
+    const validateParams = await songsSchema.validateAsync(req.params);
+    const { memberId } = validateParams;
 
     const user = await prisma.users.findFirst({
       where: {
@@ -81,7 +88,10 @@ router.delete(
   authMiddleware,
   async (req, res, next) => {
     try {
-      const { memberId, songId } = req.params;
+      // const { memberId, songId } = req.params;
+      const validateParams = await songsSchema.validateAsync(req.params);
+      const { memberId, songId } = validateParams;
+
       const user = req.user;
 
       // 프로필 주인이 로그인한 사용자와 일치하는지 확인

@@ -1,6 +1,7 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
 import authMiddleware from "../middlewares/auth.middleware.js";
+import { guestBookSchema } from "../validation/joi.js";
 
 const router = express.Router();
 
@@ -10,8 +11,12 @@ router.post(
   authMiddleware,
   async (req, res, next) => {
     try {
-      const { memberId } = req.params;
-      const { contents } = req.body;
+      // const { memberId } = req.params;
+      // const { contents } = req.body;
+      const validation = await guestBookSchema.validateAsync(req.body);
+      const validateParams = await guestBookSchema.validateAsync(req.params);
+      const { contents } = validation;
+      const { memberId } = validateParams;
 
       const user = req.user;
 
@@ -35,7 +40,9 @@ router.post(
 // 방명록 조회
 router.get("/users/:memberId/guestbook", async (req, res, next) => {
   try {
-    const { memberId } = req.params;
+    // const { memberId } = req.params;
+    const validateParams = await guestBookSchema.validateAsync(req.params);
+    const { memberId } = validateParams;
 
     const user = await prisma.users.findFirst({
       where: {
@@ -91,8 +98,12 @@ router.put(
   authMiddleware,
   async (req, res, next) => {
     try {
-      const { memberId, postId } = req.params;
-      const { contents } = req.body;
+      // const { memberId, postId } = req.params;
+      // const { contents } = req.body;
+      const validation = await guestBookSchema.validateAsync(req.body);
+      const validateParams = await guestBookSchema.validateAsync(req.params);
+      const { contents } = validation;
+      const { memberId, postId } = validateParams;
       const user = req.user;
 
       // 프로필 주인이 로그인한 사용자와 일치하는지 확인
@@ -127,7 +138,9 @@ router.delete(
   authMiddleware,
   async (req, res, next) => {
     try {
-      const { memberId, postId } = req.params;
+      // const { memberId, postId } = req.params;
+      const validateParams = await guestBookSchema.validateAsync(req.params);
+      const { memberId, postId } = validateParams;
       const user = req.user;
 
       // 프로필 주인이 로그인한 사용자와 일치하는지 확인

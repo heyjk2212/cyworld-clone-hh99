@@ -1,8 +1,35 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
 import authMiddleware from "../middlewares/auth.middleware.js";
+import { profileSchema } from "../validation/joi.js";
+// import AWS from "aws-sdk";
+// import multer from "multer";
+// import multerS3 from "multer-s3";
+// import path from "path";
+import dotenv from "dotenv";
+dotenv.config();
+
+// AWS 설정 로드
+// AWS.config.update({
+//   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+//   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+// });
 
 const router = express.Router();
+
+// let s3 = new AWS.S3();
+
+// const upload = multer({
+//   storage: multerS3({
+//     s3: s3,
+//     bucket: "hanghae99-assets",
+//     key: function (req, file, cb) {
+//       let extension = path.extname(file.originalname);
+//       cb(null, Date.now().toString() + extension);
+//     },
+//     acl: "public-read-write",
+//   }),
+// });
 
 // 프로필 등록
 router.post(
@@ -10,8 +37,12 @@ router.post(
   authMiddleware,
   async (req, res, next) => {
     try {
-      const { memberId } = req.params;
-      const { mood, message, profileImage, introduction } = req.body;
+      // const { memberId } = req.params;
+      // const { mood, message, profileImage, introduction } = req.body;
+      const validation = await profileSchema.validateAsync(req.body);
+      const validateParams = await profileSchema.validateAsync(req.params);
+      const { memberId } = validateParams;
+      const { mood, message, profileImage, introduction } = validation;
       const user = req.user;
 
       // 프로필 주인이 로그인한 사용자와 일치하는지 확인
@@ -55,7 +86,9 @@ router.post(
 // 프로필 조회
 router.get("/users/:memberId/profile", async (req, res, next) => {
   try {
-    const { memberId } = req.params;
+    // const { memberId } = req.params;
+    const validateParams = await profileSchema.validateAsync(req.params);
+    const { memberId } = validateParams;
 
     const user = await prisma.users.findFirst({
       where: {
@@ -95,10 +128,15 @@ router.get("/users/:memberId/profile", async (req, res, next) => {
 router.patch(
   "/users/:memberId/profile",
   authMiddleware,
+  // upload.single("file"),
   async (req, res, next) => {
     try {
-      const { memberId } = req.params;
-      const { mood, message, profileImage, introduction } = req.body;
+      // const { memberId } = req.params;
+      // const { mood, message, introduction } = req.body;
+      const validation = await profileSchema.validateAsync(req.body);
+      const validateParams = await profileSchema.validateAsync(req.params);
+      const { memberId } = validateParams;
+      const { mood, message, introduction } = validation;
       const user = req.user;
 
       // 프로필 주인이 로그인한 사용자와 일치하는지 확인
@@ -108,6 +146,22 @@ router.patch(
           .json({ errorMessage: "프로필을 업데이트 할 권한이 없습니다." });
       }
 
+      // 파일 정보 확인을 위한 콘솔 로그
+      console.log(req.file);
+
+      // 업로드된 파일은 req.file 객체에 저장
+      // const file = req.file; // 업로드된 파일 정보
+
+      // const params = {
+      //   Bucket: "hanghae99-assets",
+      //   Key: file.originalname,
+      //   Body: file.buffer, // 파일의 데이터
+      // };
+
+      // S3에 파일 업로드
+      //const result = await s3.upload(params).promise();
+
+      // S3에 파일 업로드된 URL을 프로필 업데이트에 사용
       await prisma.profile.update({
         where: {
           MemberId: +memberId,
@@ -115,7 +169,7 @@ router.patch(
         data: {
           mood,
           message,
-          profileImage,
+          // profileImage: result.Location, // S3에 업로드된 파일의 URL
           introduction,
         },
       });
@@ -135,7 +189,9 @@ router.delete(
   authMiddleware,
   async (req, res, next) => {
     try {
-      const { memberId } = req.params;
+      // const { memberId } = req.params;
+      const validateParams = await profileSchema.validateAsync(req.params);
+      const { memberId } = validateParams;
       const user = req.user;
 
       // 프로필 주인이 로그인한 사용자와 일치하는지 확인

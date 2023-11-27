@@ -1,6 +1,7 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
 import authMiddleware from "../middlewares/auth.middleware.js";
+import { postsSchema } from "../validation/joi.js";
 
 const router = express.Router();
 
@@ -10,8 +11,12 @@ router.post(
   authMiddleware,
   async (req, res, next) => {
     try {
-      const { memberId } = req.params;
-      const { title, contents } = req.body;
+      // const { memberId } = req.params;
+      // const { title, contents } = req.body;
+      const validation = await postsSchema.validateAsync(req.body);
+      const validateParams = await postsSchema.validateAsync(req.params);
+      const { title, contents } = validation;
+      const { memberId } = validateParams;
 
       const user = await prisma.users.findFirst({
         where: {
@@ -45,7 +50,9 @@ router.post(
 // 게시글 조회
 router.get("/users/:memberId/posts", async (req, res, next) => {
   try {
-    const { memberId } = req.params;
+    // const { memberId } = req.params;
+    const validateParams = await postsSchema.validateAsync(req.params);
+    const { memberId } = validateParams;
 
     const user = await prisma.users.findFirst({
       where: {
@@ -98,8 +105,12 @@ router.patch(
   authMiddleware,
   async (req, res, next) => {
     try {
-      const { memberId, postId } = req.params;
-      const { title, contents } = req.body;
+      // const { memberId, postId } = req.params;
+      // const { title, contents } = req.body;
+      const validation = await postsSchema.validateAsync(req.body);
+      const validateParams = await postsSchema.validateAsync(req.params);
+      const { memberId, postId } = validateParams;
+      const { title, contents } = validation;
       const user = req.user;
 
       // 프로필 주인이 로그인한 사용자와 일치하는지 확인
@@ -135,7 +146,9 @@ router.delete(
   authMiddleware,
   async (req, res, next) => {
     try {
-      const { memberId, postId } = req.params;
+      // const { memberId, postId } = req.params;
+      const validateParams = await postsSchema.validateAsync(req.params);
+      const { memberId, postId } = validateParams;
       const user = req.user;
 
       // 프로필 주인이 로그인한 사용자와 일치하는지 확인
@@ -167,12 +180,27 @@ router.post(
   authMiddleware,
   async (req, res, next) => {
     try {
-      const { memberId, postId } = req.params;
+      // const { memberId, postId } = req.params;
+      const validateParams = await postsSchema.validateAsync(req.params);
+      const { memberId, postId } = validateParams;
       const userMemberId = req.user.memberId; // 로그인한 사용자의 아이디
+
+      // 해당 사용자가 해당 게시글에 이미 좋아요를 눌렀는지 확인
+      const existingLike = await prisma.likes.findFirst({
+        where: {
+          PostId: +postId,
+          MemberId: +userMemberId,
+        },
+      });
+
+      // 이미 좋아요를 눌렀으면 에러 응답
+      if (existingLike) {
+        return res.status(400).json({ error: "이미 좋아요를 눌렀습니다" });
+      }
 
       // 좋아요 추가
       const like = await prisma.likes.create({
-        where: {
+        data: {
           PostId: +postId,
           MemberId: +userMemberId,
         },
@@ -205,33 +233,49 @@ router.delete(
   authMiddleware,
   async (req, res, next) => {
     try {
-      const { memberId, postId } = req.params;
+      // const { memberId, postId } = req.params;
+      const validateParams = await postsSchema.validateAsync(req.params);
+      const { memberId, postId } = validateParams;
       const userMemberId = req.user.memberId; // 로그인한 사용자의 아이디
 
-      // 좋아요 삭제
-      const like = await prisma.likes.deleteMany({
+      // 해당 사용자가 해당 게시글에 좋아요를 눌렀는지 확인
+      const existingLike = await prisma.likes.findFirst({
         where: {
           PostId: +postId,
           MemberId: +userMemberId,
         },
       });
 
-      // 해당 게시글의 좋아요 개수 감소
-      await prisma.posts.update({
-        where: {
-          postId: +postId,
-        },
-        data: {
-          likeCount: {
-            decrement: 1, // 좋아요 수를 1 감소
+      // 이미 좋아요를 누른 경우에만 취소
+      if (existingLike) {
+        // 좋아요 삭제
+        const deletedLike = await prisma.likes.deleteMany({
+          where: {
+            PostId: +postId,
+            MemberId: +userMemberId,
           },
-        },
-      });
+        });
 
-      return res.status(200).json({ message: "좋아요를 취소했습니다" });
+        // 해당 게시글의 좋아요 개수 감소
+        await prisma.posts.update({
+          where: {
+            postId: +postId,
+          },
+          data: {
+            likeCount: {
+              decrement: 1, // 좋아요 수를 1 감소
+            },
+          },
+        });
+
+        return res.status(200).json({ message: "좋아요를 취소했습니다" });
+      } else {
+        return res
+          .status(404)
+          .json({ message: "해당 게시글에 대한 좋아요가 없습니다" });
+      }
     } catch (error) {
       console.error(error);
-
       return res.status(500).json({ error: "서버 에러" });
     }
   },
