@@ -69,8 +69,8 @@ router.get("/users/:memberId/guestbook", async (req, res, next) => {
         updatedAt: true,
         User: {
           select: {
-            loginId: true,
-            username: true,
+            id: true,
+            name: true,
             nickname: true,
             Profile: {
               select: {
