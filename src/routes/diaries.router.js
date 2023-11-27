@@ -112,7 +112,7 @@ router.put(
       if (!diary) {
         return res
           .status(400)
-          .json({ errorMessage: "다이어리가 존재하지 않습니다." });
+          .json({ errorMessage: "수정할 다이어리가 존재하지 않습니다." });
       }
 
       await prisma.diaries.update({
@@ -153,6 +153,18 @@ router.delete(
         return res
           .status(403)
           .json({ errorMessage: "다이어리를 삭제할 권한이 없습니다." });
+      }
+
+      const diary = await prisma.diaries.findFirst({
+        where: {
+          diaryId: +diaryId,
+        },
+      });
+
+      if (!diary) {
+        return res
+          .status(400)
+          .json({ errorMessage: "삭제할 다이어리가 존재하지 않습니다." });
       }
 
       await prisma.diaries.delete({

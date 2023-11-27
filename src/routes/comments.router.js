@@ -17,18 +17,7 @@ router.post(
       const validateParams = await commentsSchema.validateAsync(req.params);
       const { contents } = validation;
       const { memberId, postId } = validateParams;
-
-      const user = await prisma.users.findFirst({
-        where: {
-          memberId: +memberId,
-        },
-      });
-
-      if (!user) {
-        return res
-          .status(404)
-          .json({ errorMessage: "등록된 유저가 아닙니다." });
-      }
+      const user = req.user;
 
       const post = await prisma.posts.findFirst({
         where: {
@@ -45,6 +34,7 @@ router.post(
       await prisma.comments.create({
         data: {
           MemberId: +memberId,
+          writerId: +user.memberId,
           PostId: +postId,
           contents,
         },
@@ -73,8 +63,22 @@ router.put(
       const { memberId, postId, commentId } = validateParams;
       const user = req.user;
 
-      // 프로필 주인이 로그인한 사용자와 일치하는지 확인
-      if (user.memberId !== +memberId) {
+      const checkComments = await prisma.comments.findFirst({
+        where: {
+          commentId: +commentId,
+        },
+      });
+
+      if (!checkComments) {
+        return res.status(403).json({ errorMessage: "없는 댓글입니다." });
+      }
+
+      // 로그인한 사용자와 프로필 주인이 일치하지 않으면 수정할 권한이 없음
+      // 로그인한 사용자가 글쓴이가 아니어도 수정할 권한이 없음
+      if (
+        user.memberId !== +memberId &&
+        user.memberId !== checkComments.writerId
+      ) {
         return res
           .status(403)
           .json({ errorMessage: "댓글을 수정할 권한이 없습니다." });
@@ -87,7 +91,7 @@ router.put(
       });
 
       if (!post) {
-        return res.status(404).json({ errorMessage: "없는 포스트" });
+        return res.status(404).json({ errorMessage: "없는 포스트입니다" });
       }
 
       const comment = await prisma.comments.findFirst({
@@ -97,7 +101,7 @@ router.put(
       });
 
       if (!comment) {
-        return res.status(404).json({ errorMessage: "없는 댓글" });
+        return res.status(404).json({ errorMessage: "없는 댓글입니다" });
       }
 
       await prisma.comments.update({
@@ -131,8 +135,22 @@ router.delete(
       const { memberId, postId, commentId } = validateParams;
       const user = req.user;
 
-      // 프로필 주인이 로그인한 사용자와 일치하는지 확인
-      if (user.memberId !== +memberId) {
+      const checkComments = await prisma.comments.findFirst({
+        where: {
+          commentId: +commentId,
+        },
+      });
+
+      if (!checkComments) {
+        return res.status(404).json({ errorMessage: "없는 댓글입니다" });
+      }
+
+      // 로그인한 사용자와 프로필 주인이 일치하지 않으면 삭제할 권한이 없음
+      // 로그인한 사용자가 글쓴이가 아니어도 삭제할 권한이 없음
+      if (
+        user.memberId !== +memberId &&
+        user.memberId !== checkComments.writerId
+      ) {
         return res
           .status(403)
           .json({ errorMessage: "댓글을 삭제할 권한이 없습니다." });
@@ -145,17 +163,7 @@ router.delete(
       });
 
       if (!post) {
-        return res.status(404).json({ errorMessage: "없는 포스트" });
-      }
-
-      const comment = await prisma.comments.findFirst({
-        where: {
-          commentId: +commentId,
-        },
-      });
-
-      if (!comment) {
-        return res.status(404).json({ errorMessage: "없는 댓글" });
+        return res.status(404).json({ errorMessage: "없는 포스트입니다" });
       }
 
       await prisma.comments.delete({

@@ -63,6 +63,7 @@ router.get("/users/:memberId/guestbook", async (req, res, next) => {
       select: {
         MemberId: true,
         postId: true,
+        writerId: true,
         contents: true,
         createdAt: true,
         updatedAt: true,
@@ -106,11 +107,27 @@ router.put(
       const { memberId, postId } = validateParams;
       const user = req.user;
 
-      // 프로필 주인이 로그인한 사용자와 일치하는지 확인
-      if (user.memberId !== +memberId) {
+      const checkGuestbook = await prisma.guestBook.findFirst({
+        where: {
+          postId: +postId,
+        },
+      });
+
+      if (!checkGuestbook) {
+        return res
+          .status(404)
+          .json({ errorMessage: "수정할 방명록이 없습니다." });
+      }
+
+      // 로그인한 사용자와 프로필 주인이 일치하지 않으면 수정할 권한이 없음
+      // 로그인한 사용자가 글쓴이가 아니어도 수정할 권한이 없음
+      if (
+        user.memberId !== +memberId &&
+        user.memberId !== checkGuestbook.writerId
+      ) {
         return res
           .status(403)
-          .json({ errorMessage: "방명록을 삭제할 권한이 없습니다." });
+          .json({ errorMessage: "방명록을 수정할 권한이 없습니다." });
       }
 
       await prisma.guestBook.update({
@@ -143,11 +160,27 @@ router.delete(
       const { memberId, postId } = validateParams;
       const user = req.user;
 
-      // 프로필 주인이 로그인한 사용자와 일치하는지 확인
-      if (user.memberId !== +memberId) {
+      const checkGuestbook = await prisma.guestBook.findFirst({
+        where: {
+          postId: +postId,
+        },
+      });
+
+      if (!checkGuestbook) {
+        return res
+          .status(404)
+          .json({ errorMessage: "삭제할 방명록이 없습니다." });
+      }
+
+      // 로그인한 사용자와 프로필 주인이 일치하지 않으면 삭제할 권한이 없음
+      // 로그인한 사용자가 글쓴이가 아니어도 삭제할 권한이 없음
+      if (
+        user.memberId !== +memberId &&
+        user.memberId !== checkGuestbook.writerId
+      ) {
         return res
           .status(403)
-          .json({ errorMessage: "방명록을 삭제할 권한이 없습니다." });
+          .json({ errorMessage: "방명록을 수정할 권한이 없습니다." });
       }
 
       await prisma.guestBook.delete({

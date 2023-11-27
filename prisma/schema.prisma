@@ -21,7 +21,7 @@ model Users {
   updatedAt DateTime @updatedAt @map("updatedAt")
 
   Profile Profile?
-  GuestBook GuestBook[] // 사용자가 작성한 방명록
+  GuestBook GuestBook[] 
   Diaries Diaries[]
   Posts Posts[]
   Songs Songs[]
@@ -34,10 +34,10 @@ model Users {
 model Profile {
   profileId Int @id @default(autoincrement()) @map("profileId")
   MemberId Int  @unique @map("MemberId")
-  mood String @default("즐거움") @map("mood")
-  message String @default("곧 크리스마스~~!!") @map("message") 
-  introduction String @default("안녕하세요") @map("introduction") 
-  profileImage String @default("https://hanghae99-assets.s3.ap-northeast-2.amazonaws.com/%EC%82%AC%EC%A7%84.jfif") @map("profileImage")
+  mood String  @map("mood")
+  message String  @map("message") 
+  introduction String @map("introduction") 
+  profileImage String @map("profileImage")
   
   createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
@@ -49,8 +49,8 @@ model Profile {
 
 model GuestBook {
   postId Int @id @default(autoincrement()) @map("postId")
-  MemberId Int @map("MemberId") // 방명록 소유주의 아이디
-  writerId Int @map("writerId")  // 글을 작성한 사용자의 아이디
+  MemberId Int @map("MemberId") 
+  writerId Int @map("writerId")  
   contents String @map("contents") @db.Text
 
   createdAt DateTime @default(now()) @map("createdAt")
@@ -77,6 +77,7 @@ model Diaries {
 model Posts {
   postId Int @id @default(autoincrement()) @map("postId")
   MemberId Int @map("MemberId")
+  writerId Int @map("writerId")
   title String @map("title")
   likeCount Int @default(0) @map("likeCount")
   contents String @map("contents") @db.Text
@@ -121,6 +122,7 @@ model Comments {
   commentId Int @id @default(autoincrement()) @map("commentId")
   MemberId Int @map("MemberId")
   PostId Int @map("PostId")
+  writerId Int @map("writerId")
   contents String @map("contents")
 
   createdAt DateTime @default(now()) @map("createdAt")

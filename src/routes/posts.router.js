@@ -17,22 +17,12 @@ router.post(
       const validateParams = await postsSchema.validateAsync(req.params);
       const { title, contents } = validation;
       const { memberId } = validateParams;
-
-      const user = await prisma.users.findFirst({
-        where: {
-          memberId: +memberId,
-        },
-      });
-
-      if (!user) {
-        return res
-          .status(400)
-          .json({ errorMessage: "유저가 존재하지 않습니다." });
-      }
+      const user = req.user;
 
       await prisma.posts.create({
         data: {
           MemberId: +memberId,
+          writerId: +user.memberId,
           title,
           contents,
         },
@@ -72,6 +62,7 @@ router.get("/users/:memberId/posts", async (req, res, next) => {
       },
       select: {
         postId: true,
+        writerId: true,
         title: true,
         contents: true,
         createdAt: true,
@@ -80,6 +71,7 @@ router.get("/users/:memberId/posts", async (req, res, next) => {
         Comments: {
           select: {
             commentId: true,
+            writerId: true,
             contents: true,
             createdAt: true,
             updatedAt: true,
@@ -113,8 +105,24 @@ router.patch(
       const { title, contents } = validation;
       const user = req.user;
 
-      // 프로필 주인이 로그인한 사용자와 일치하는지 확인
-      if (user.memberId !== +memberId) {
+      const checkPosts = await prisma.posts.findFirst({
+        where: {
+          postId: +postId,
+        },
+      });
+
+      if (!checkPosts) {
+        return res
+          .status(404)
+          .json({ errorMessage: "수정할 게시글이 없습니다." });
+      }
+
+      // 로그인한 사용자와 프로필 주인이 일치하지 않으면 수정할 권한이 없음
+      // 로그인한 사용자가 글쓴이가 아니어도 수정할 권한이 없음
+      if (
+        user.memberId !== +memberId &&
+        user.memberId !== checkPosts.writerId
+      ) {
         return res
           .status(403)
           .json({ errorMessage: "게시글을 수정할 권한이 없습니다." });
@@ -151,11 +159,27 @@ router.delete(
       const { memberId, postId } = validateParams;
       const user = req.user;
 
-      // 프로필 주인이 로그인한 사용자와 일치하는지 확인
-      if (user.memberId !== +memberId) {
+      const checkPosts = await prisma.posts.findFirst({
+        where: {
+          postId: +postId,
+        },
+      });
+
+      if (!checkPosts) {
+        return res
+          .status(404)
+          .json({ errorMessage: "삭제할 게시글이 없습니다." });
+      }
+
+      // 로그인한 사용자와 프로필 주인이 일치하지 않으면 수정할 권한이 없음
+      // 로그인한 사용자가 글쓴이가 아니어도 수정할 권한이 없음
+      if (
+        user.memberId !== +memberId &&
+        user.memberId !== checkPosts.writerId
+      ) {
         return res
           .status(403)
-          .json({ errorMessage: "게시글을 삭제할 권한이 없습니다." });
+          .json({ errorMessage: "게시글을을 삭제할 권한이 없습니다." });
       }
 
       await prisma.posts.delete({
