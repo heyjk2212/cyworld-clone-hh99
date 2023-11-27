@@ -7,8 +7,9 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.458.0",
     "@prisma/client": "^5.6.0",
-    "aws-sdk": "^2.1502.0",
+    "aws-sdk": "^2.1503.0",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",
     "dotenv": "^16.3.1",
