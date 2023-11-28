@@ -116,6 +116,7 @@ router.get(
           mood: true,
           profileImage: true,
           introduction: true,
+          backgroundMusic: true,
           message: true,
           updatedAt: true,
         },

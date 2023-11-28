@@ -38,6 +38,7 @@ model Profile {
   message String  @map("message") 
   introduction String @map("introduction") 
   profileImage String @map("profileImage")
+  backgroundMusic String @default("https://www.youtube.com/watch?v=3AtDnEC4zak") @map("backgroundMusic")
   
   createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
