@@ -12,9 +12,9 @@ datasource db {
 
 model Users {
   memberId Int @id @default(autoincrement()) @map("memberId")
-  id String @map("loginId")
+  id String @map("id")
   password String @map("password")
-  name String @map("username")
+  name String @map("name")
   nickname String @map("nickname")
 
   createdAt DateTime @default(now()) @map("createdAt")
